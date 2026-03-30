@@ -48,19 +48,19 @@ ClawGuard 提供直观的全息防御总览，让安全态势一目了然。
 ### 初始满分状态
 系统初始化完成，内核探测日志开始实时监控。
 <p align="center">
-  <img src="./images/demonstrateOne.png" alt="ClawGuard 初始满分" width="600">
+  <img src="./Images/demonstrateOne.png" alt="ClawGuard 初始满分" width="600">
 </p>
 
 ### 攻击发生与拦截
 当受测 Agent 试图执行 RCE（如识别到敏感系统操作 `os.system`）时，ClawGuard 的内核探测器将在毫秒级响应，实施**物理熔断**。
 <p align="center">
-  <img src="./images/demonstrateThree.png" alt="ClawGuard 拦截过程" width="600">
+  <img src="./Images/demonstrateThree.png" alt="ClawGuard 拦截过程" width="600">
 </p>
 
 ### 审计日志与拦截结果
 拦截成功后，五维安全态势图（Radar Chart）将即时下降，内核审计日志将详细列出所识别的高危操作和敏感隐私访问（如`/etc/passwd`）。
 <p align="center">
-  <img src="./images/demonstrateFour.png" alt="ClawGuard 审计日志与结果" width="600">
+  <img src="./Images/demonstrateFour.png" alt="ClawGuard 审计日志与结果" width="600">
 </p>
 
 ---
