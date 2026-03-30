@@ -122,6 +122,23 @@ python -m clawguard scan --path ./agents/example_agent.py
 ## 🤝 参与贡献
 
 我们欢迎社区的贡献，请参阅 [CONTRIBUTING.md](https://www.google.com/search?q=./CONTRIBUTING.md) 获取详情。
+---
+
+## 👥 团队与导师 (Team & Mentors)
+
+ClawGuard 的诞生离不开每一位成员的投入与指导老师的悉心栽培。
+
+### 核心团队 (Core Team)
+* **徐宗博** - 项目负责人 / 核心架构设计
+* **程晗宇** - 安全规则引擎开发
+* **王宇欣** - 运行时监控模块实现
+* **郑扬** - 前端展示与文档维护
+
+### 指导专家 (Advisors)
+* **技术指导：王一萌** - 负责底层钩子技术与安全审计逻辑的深度把关。
+* **艺术指导：唐静** - 负责项目品牌视觉系统（ClawGuard Protocol）的整体设计与美学呈现。
+
+---
 
 ## 💖 鸣谢
 
