@@ -4,7 +4,7 @@
 > **CLAWGUARD: SECURE NAVIGATION PROTOCOL**
 
 <p align="center">
-  <img src="./images/LOGOA.png" alt="ClawGuard Logo Hero" width="400">
+  <img src="./Images/LOGOA.png" alt="ClawGuard Logo Hero" width="400">
 </p>
 
 ClawGuard 是一款专为 AI Agent 生态（包括但不限于 OpenClaw）打造的工业级安全盾牌。其设计理念基于**六边形护盾（Shield）**与**拦截轴（Action Interceptor）**，旨在解决 AI 代理在动态交互中日益凸显的代码后门、隐私窃取、恶意命令执行和违规行为。
@@ -18,7 +18,7 @@ ClawGuard 是一款专为 AI Agent 生态（包括但不限于 OpenClaw）打造
 ClawGuard 的标识不仅仅是一个图形，它是我们对安全承诺的视觉表达。
 
 <p align="center">
-  <img src="./images/LOGOB.png" alt="ClawGuard Anatomy" width="500">
+  <img src="./Images/LOGOB.png" alt="ClawGuard Anatomy" width="500">
 </p>
 <p align="center">
   <em>口号: CLAWGUARD: SECURE NAVIGATION PROTOCOL</em>
