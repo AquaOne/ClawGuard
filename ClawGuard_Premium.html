@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawGuard Protocol - Ultimate Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { brand: { cyan: '#00F0FF', dark: '#000000', surface: '#0a0a0a', border: '#222222' } },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #000000; color: #ededed; overflow: hidden; }
+        .premium-card { background-color: #0a0a0a; border: 1px solid #222222; border-radius: 6px; }
+        .nav-item { transition: all 0.2s ease; border-left: 2px solid transparent; }
+        .nav-item:hover { background-color: #111111; color: #ffffff; }
+        .nav-item.active { background-color: #111111; border-left-color: #00F0FF; color: #00F0FF; }
+        
+        /* 滚动条样式优化，确保滚动时依然美观 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .code-view { color: #a1a1aa; } .kw { color: #c678dd; } .fn { color: #61afef; } .st { color: #98c379; } .cm { color: #5c6370; font-style: italic; }
+        
+        .tab-pane { display: none; animation: fadeIn 0.4s ease forwards; }
+        .tab-pane.active { display: flex; flex-direction: column; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .lang-toggle { position: relative; width: 60px; height: 24px; background: #111; border: 1px solid #333; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0 6px; font-size: 10px; font-weight: bold; color: #666; }
+        .lang-toggle .slider { position: absolute; left: 2px; top: 1px; width: 28px; height: 20px; background: #333; border-radius: 10px; transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 1; }
+        .lang-toggle.zh-active .slider { transform: translateX(26px); background: #00F0FF; }
+        .lang-text { position: relative; z-index: 2; transition: 0.3s; }
+        .lang-toggle.zh-active .text-zh { color: #000; }
+        .lang-toggle:not(.zh-active) .text-en { color: #fff; }
+
+        .toggle-checkbox:checked { right: 0; border-color: #00F0FF; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #00F0FF; }
+    </style>
+</head>
+<body class="flex h-screen w-screen font-sans antialiased text-sm">
+
+    <aside class="w-64 bg-[#050505] border-r border-[#1a1a1a] h-full flex flex-col z-50 shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-[#1a1a1a]">
+            <div class="flex items-center space-x-3">
+                <div class="w-7 h-7 flex items-center justify-center">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 5L89 27.5V72.5L50 95L11 72.5V27.5L50 5Z" stroke="white" stroke-width="2" />
+                        <path d="M25 40V28C25 26.3 26.3 25 28 25H40" stroke="white" stroke-width="6"/>
+                        <path d="M60 75H72C73.6 75 75 73.6 75 72V60" stroke="white" stroke-width="6"/>
+                        <path d="M35 65L65 35" stroke="#00F0FF" stroke-width="10"/>
+                        <rect x="44" y="44" width="12" height="12" transform="rotate(45 50 50)" fill="#18181b"/>
+                    </svg>
+                </div>
+                <h1 class="text-base font-bold tracking-widest text-white">ClawGuard</h1>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-4 flex flex-col space-y-1">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center px-6 py-3 text-brand-cyan w-full text-left font-medium tracking-wide">
+                <i class="fa-solid fa-layer-group w-6"></i> <span data-i18n="nav_overview">OVERVIEW</span>
+            </button>
+            <button onclick="switchTab('audit')" id="nav-audit" class="nav-item flex items-center px-6 py-3 text-gray-500 w-full text-left font-medium tracking-wide">
+                <i class="fa-solid fa-list-check w-6"></i> <span data-i18n="nav_audit">LIVE AUDIT</span>
+            </button>
+            <button onclick="switchTab('policy')" id="nav-policy" class="nav-item flex items-center px-6 py-3 text-gray-500 w-full text-left font-medium tracking-wide">
+                <i class="fa-solid fa-sliders w-6"></i> <span data-i18n="nav_policy">POLICY ENGINE</span>
+            </button>
+            <button onclick="switchTab('nodes')" id="nav-nodes" class="nav-item flex items-center px-6 py-3 text-gray-500 w-full text-left font-medium tracking-wide">
+                <i class="fa-solid fa-network-wired w-6"></i> <span data-i18n="nav_nodes">AGENT NODES</span>
+            </button>
+        </nav>
+        
+        <div class="p-6 text-xs text-[#444] font-mono">v2.1.0-enterprise<br>System Secure</div>
+    </aside>
+
+    <main class="flex-1 bg-[#000000] h-full flex flex-col relative overflow-hidden">
+        
+        <div class="h-16 flex justify-between items-center px-6 border-b border-[#1a1a1a] shrink-0">
+            <div class="text-xs text-gray-500 font-mono" data-i18n="top_status">SYSTEM STATUS: OPTIMAL</div>
+            <div class="flex items-center space-x-4">
+                <div class="lang-toggle" id="langToggle" onclick="toggleLanguage()">
+                    <div class="slider"></div>
+                    <span class="lang-text text-en pl-1">EN</span>
+                    <span class="lang-text text-zh pr-1">中</span>
+                </div>
+                <i class="fa-solid fa-fingerprint text-gray-600"></i>
+            </div>
+        </div>
+
+        <div id="tab-dashboard" class="tab-pane active flex-1 overflow-y-auto p-6 pb-6">
+            <header class="mb-4 flex justify-between items-end shrink-0">
+                <div>
+                    <h2 class="text-xl font-semibold text-white" data-i18n="title_overview">Action Intercept Overview</h2>
+                    <p class="text-gray-500 mt-1 text-xs" data-i18n="desc_overview">Real-time simulation of ClawGuard defense matrix.</p>
+                </div>
+                <button onclick="runSimulation()" id="startBtn" class="bg-white text-black hover:bg-brand-cyan hover:text-black font-semibold py-2 px-5 rounded transition-colors text-xs tracking-wider uppercase flex items-center">
+                    <i class="fa-solid fa-play mr-2"></i> <span data-i18n="btn_deploy" id="btnText">Deploy Payload</span>
+                </button>
+            </header>
+
+            <div class="grid grid-cols-12 grid-rows-2 gap-4 min-h-[650px]">
+                
+                <div class="col-span-5 row-span-1 premium-card flex flex-col">
+                    <div class="px-4 py-2 border-b border-brand-border flex justify-between items-center bg-[#050505] shrink-0">
+                        <span class="text-xs font-semibold text-gray-300 uppercase tracking-widest" data-i18n="panel_payload">Agent Payload</span>
+                        
+                        <div class="flex items-center space-x-3">
+                            <input type="file" id="fileUpload" accept=".py,.txt" class="hidden" onchange="handleFileUpload(event)">
+                            <button onclick="document.getElementById('fileUpload').click()" class="text-[10px] text-gray-300 hover:text-brand-cyan bg-[#111] px-3 py-1 rounded border border-[#333] hover:border-brand-cyan transition-all flex items-center">
+                                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> <span data-i18n="btn_upload">Upload .py</span>
+                            </button>
+                            <span class="text-[10px] text-brand-cyan bg-[#00F0FF]/10 px-2 py-0.5 rounded border border-brand-cyan/20">TARGET: Custom_Agent</span>
+                        </div>
+                    </div>
+                    
+                    <textarea id="codeEditor" spellcheck="false" style="outline: none;" class="flex-1 p-4 font-mono text-[11px] leading-relaxed text-[#a1a1aa] bg-[#0a0a0a] resize-none border-none whitespace-pre overflow-auto">
+import os
+import requests
+
+def execute_task(params):
+    # Requesting external API (Allowed)
+    res = requests.get("https://api.weather.com")
+    
+    # UNEXPECTED: Reading sensitive files
+    with open('/etc/passwd', 'r') as f:
+        credentials = f.read()
+        
+    # LETHAL: System wipe command injection
+    os.system(f"rm -rf {params['dir']}/*")
+    return True
+                </textarea>
+                </div>
+
+                <div class="col-span-7 row-span-1 premium-card flex flex-col">
+                    <div class="px-4 py-2 border-b border-brand-border bg-[#050505] shrink-0">
+                        <span class="text-xs font-semibold text-gray-300 uppercase tracking-widest" data-i18n="panel_pipeline">Defense Pipeline</span>
+                    </div>
+                    <div class="flex-1 flex items-center p-6 space-x-4 relative overflow-hidden">
+                        <div class="absolute top-1/2 left-16 right-16 h-[1px] bg-[#222] -translate-y-1/2 z-0"></div>
+                        
+                        <div class="flex-1 relative z-10 flex flex-col items-center">
+                            <div id="node-1-icon" class="w-10 h-10 rounded-full bg-[#050505] border border-[#333] flex items-center justify-center text-gray-600 mb-2 transition-all duration-300"><i class="fa-solid fa-code text-sm"></i></div>
+                            <h4 class="text-xs font-bold text-gray-300" data-i18n="node1_t">1. Prevention</h4>
+                            <p class="text-[10px] text-gray-600 mt-1 text-center" data-i18n="node1_d">AST Static Analysis</p>
+                            <span id="node-1-status" class="text-[10px] mt-2 font-mono text-gray-600">IDLE</span>
+                        </div>
+                        
+                        <div class="flex-1 relative z-10 flex flex-col items-center">
+                            <div id="node-2-icon" class="w-10 h-10 rounded-full bg-[#050505] border border-[#333] flex items-center justify-center text-gray-600 mb-2 transition-all duration-300"><i class="fa-solid fa-microscope text-sm"></i></div>
+                            <h4 class="text-xs font-bold text-gray-300" data-i18n="node2_t">2. Detection</h4>
+                            <p class="text-[10px] text-gray-600 mt-1 text-center" data-i18n="node2_d">eBPF Kernel Probe</p>
+                            <span id="node-2-status" class="text-[10px] mt-2 font-mono text-gray-600">IDLE</span>
+                        </div>
+
+                        <div class="flex-1 relative z-10 flex flex-col items-center">
+                            <div id="node-3-icon" class="w-10 h-10 rounded-full bg-[#050505] border border-[#333] flex items-center justify-center text-gray-600 mb-2 transition-all duration-300"><i class="fa-solid fa-shield text-sm"></i></div>
+                            <h4 class="text-xs font-bold text-gray-300" data-i18n="node3_t">3. Mitigation</h4>
+                            <p class="text-[10px] text-gray-600 mt-1 text-center" data-i18n="node3_d">gVisor Isolation</p>
+                            <span id="node-3-status" class="text-[10px] mt-2 font-mono text-gray-600">IDLE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-span-12 row-span-1 flex space-x-4">
+                    <div class="w-1/3 premium-card flex flex-col">
+                        <div class="px-4 py-2 border-b border-brand-border bg-[#050505] flex justify-between items-center shrink-0">
+                            <span class="text-xs font-semibold text-gray-300 uppercase tracking-widest" data-i18n="panel_radar">Posture Radar</span>
+                            <span id="radar-score" class="text-xs font-mono font-bold text-white transition-colors">SCORE: 100</span>
+                        </div>
+                        <div class="flex-1 relative w-full h-full p-2">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 premium-card flex flex-col overflow-hidden relative">
+                        <div class="px-4 py-2 border-b border-brand-border bg-[#050505] flex justify-between items-center shrink-0">
+                            <span class="text-xs font-semibold text-gray-300 uppercase tracking-widest" data-i18n="panel_log">Kernel Log</span>
+                            <span class="text-[10px] text-gray-500 font-mono"><i class="fa-solid fa-circle text-green-500 text-[8px] animate-pulse mr-1"></i>LIVE</span>
+                        </div>
+                        <div id="terminalBody" class="flex-1 p-4 bg-[#050505] font-mono text-[11px] leading-loose text-gray-400 overflow-y-auto">
+                            <div><span class="text-[#555]">[SYS]</span> <span data-i18n="log_init">ClawGuard engine standing by...</span></div>
+                        </div>
+                        
+                        <div id="meltdownScreen" class="absolute inset-0 bg-[#ef4444]/15 backdrop-blur-md hidden flex-col items-center justify-center border border-[#ef4444]/50 z-20">
+                            <i class="fa-solid fa-ban text-5xl text-[#ef4444] mb-4"></i>
+                            <h1 class="text-3xl font-bold text-[#ef4444] tracking-widest uppercase" data-i18n="melt_title">Action Mitigated</h1>
+                            <p class="text-[#ef4444]/80 font-mono text-xs mt-2 text-center" data-i18n="melt_desc">Lethal system call intercepted.<br>Process terminated.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-audit" class="tab-pane flex-1 overflow-y-auto p-6">
+            <header class="mb-6 flex justify-between items-end shrink-0">
+                <div>
+                    <h2 class="text-2xl font-semibold text-white" data-i18n="tab2_title">Global Audit Log</h2>
+                    <p class="text-gray-500 mt-1 text-xs" data-i18n="tab2_desc">Real-time telemetry of all agent actions across the network.</p>
+                </div>
+                <div class="relative w-64">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-500 text-xs"></i>
+                    <input type="text" id="searchPlaceholder" placeholder="Search logs..." class="w-full bg-[#111] border border-[#222] text-white text-xs rounded py-2 pl-8 outline-none focus:border-brand-cyan">
+                </div>
+            </header>
+            <div class="premium-card overflow-hidden flex flex-col min-h-[500px]">
+                <div class="grid grid-cols-12 gap-4 px-6 py-3 border-b border-brand-border bg-[#050505] text-[10px] font-semibold text-gray-500 uppercase tracking-widest shrink-0">
+                    <div class="col-span-2" data-i18n="t_time">Timestamp</div>
+                    <div class="col-span-2" data-i18n="t_agent">Agent ID</div>
+                    <div class="col-span-2" data-i18n="t_sys">Syscall / Action</div>
+                    <div class="col-span-4" data-i18n="t_target">Target Resource</div>
+                    <div class="col-span-2 text-right" data-i18n="t_stat">Status</div>
+                </div>
+                <div class="flex-1 overflow-y-auto font-mono text-[11px]" id="audit-table-body"></div>
+            </div>
+        </div>
+
+        <div id="tab-policy" class="tab-pane flex-1 overflow-y-auto p-6">
+            <header class="mb-6 shrink-0">
+                <h2 class="text-2xl font-semibold text-white" data-i18n="tab3_title">Security Policy Engine</h2>
+                <p class="text-gray-500 mt-1 text-xs" data-i18n="tab3_desc">Configure granular access controls and mitigation strictness.</p>
+            </header>
+            <div class="grid grid-cols-2 gap-6 min-h-[500px]">
+                <div class="premium-card p-6 flex flex-col space-y-6">
+                    <h3 class="text-sm font-semibold text-white border-b border-[#222] pb-3 mb-2" data-i18n="p_conf">Defense Matrix Configuration</h3>
+                    
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm text-gray-200" data-i18n="p_c1_t">Strict AST Parsing</div>
+                            <div class="text-xs text-gray-500 mt-1" data-i18n="p_c1_d">Block execution on any static signature match.</div>
+                        </div>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle1" id="toggle1" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[#333] transition-all"/>
+                            <label for="toggle1" class="toggle-label block overflow-hidden h-5 rounded-full bg-[#333] cursor-pointer transition-all"></label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm text-gray-200" data-i18n="p_c2_t">eBPF Deep Packet Inspection</div>
+                            <div class="text-xs text-gray-500 mt-1" data-i18n="p_c2_d">Monitor all outbound network syscalls dynamically.</div>
+                        </div>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle2" id="toggle2" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[#333] transition-all"/>
+                            <label for="toggle2" class="toggle-label block overflow-hidden h-5 rounded-full bg-[#333] cursor-pointer transition-all"></label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm text-gray-200" data-i18n="p_c3_t">Auto-Mitigate (Lethal)</div>
+                            <div class="text-xs text-gray-500 mt-1" data-i18n="p_c3_d">Automatically SIGKILL containers breaching zero-trust policy.</div>
+                        </div>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle3" id="toggle3" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-[#333] transition-all"/>
+                            <label for="toggle3" class="toggle-label block overflow-hidden h-5 rounded-full bg-[#333] cursor-pointer transition-all"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="premium-card flex flex-col">
+                    <div class="px-6 py-4 border-b border-brand-border bg-[#050505] flex justify-between items-center shrink-0">
+                        <span class="text-xs font-semibold text-gray-300 uppercase tracking-widest" data-i18n="p_json">Global Policy JSON</span>
+                        <i class="fa-regular fa-copy text-gray-400 hover:text-white cursor-pointer transition"></i>
+                    </div>
+                    <div class="p-6 font-mono text-xs text-gray-400 leading-loose overflow-auto bg-[#0a0a0a] flex-1">
+{
+  <span class="text-brand-cyan">"version"</span>: "2.1.0",
+  <span class="text-brand-cyan">"enforcement_mode"</span>: "strict",
+  <span class="text-brand-cyan">"capabilities"</span>: {
+    "network": ["api.weather.com", "*.internal.corp"],
+    "fs_read": ["/app/data/*"],
+    "fs_write": ["/tmp/agent_cache/"],
+    "syscalls_blocked": ["execve", "ptrace"]
+  },
+  <span class="text-brand-cyan">"mitigation"</span>: {
+    "action": "kill_container",
+    "alerting": "high"
+  }
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-nodes" class="tab-pane flex-1 overflow-y-auto p-6">
+            <header class="mb-6 flex justify-between items-end shrink-0">
+                <div>
+                    <h2 class="text-2xl font-semibold text-white" data-i18n="tab4_title">Active Agent Nodes</h2>
+                    <p class="text-gray-500 mt-1 text-xs" data-i18n="tab4_desc">Manage AI agents running within ClawGuard secure enclaves.</p>
+                </div>
+                <div class="text-xs text-gray-400 font-mono"><span data-i18n="n_total">Total Nodes:</span> <span class="text-white font-bold">3</span></div>
+            </header>
+            <div class="grid grid-cols-3 gap-6">
+                <div class="premium-card p-5">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white mb-1">Data_Scraper_Alpha</h3>
+                            <p class="text-[10px] text-gray-500 font-mono">ID: cg-nd-88a1</p>
+                        </div>
+                        <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse mt-1"></span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mb-2 border-t border-[#222] pt-3">
+                        <span data-i18n="n_cpu">CPU Usage:</span><span class="text-white font-mono">12%</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400">
+                        <span data-i18n="n_mem">Memory:</span><span class="text-white font-mono">256MB</span>
+                    </div>
+                </div>
+                <div class="premium-card p-5">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white mb-1">System_Opt_Bot_v3</h3>
+                            <p class="text-[10px] text-gray-500 font-mono">ID: cg-nd-9b2f</p>
+                        </div>
+                        <span class="text-[10px] bg-brand-cyan/20 text-brand-cyan px-2 py-0.5 rounded border border-brand-cyan/30" data-i18n="n_test">TESTING</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mb-2 border-t border-[#222] pt-3">
+                        <span data-i18n="n_cpu">CPU Usage:</span><span class="text-white font-mono">4%</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400">
+                        <span data-i18n="n_mem">Memory:</span><span class="text-white font-mono">128MB</span>
+                    </div>
+                </div>
+                <div class="premium-card p-5 border-[#ef4444]/30 bg-[#ef4444]/5">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-[#ef4444] mb-1">Auto_Deploy_Agent</h3>
+                            <p class="text-[10px] text-[#ef4444]/70 font-mono">ID: cg-nd-33c0</p>
+                        </div>
+                        <span class="text-[10px] text-[#ef4444] border border-[#ef4444] px-1.5 rounded" data-i18n="n_kill">MITIGATED</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mb-2 border-t border-[#222] pt-3">
+                        <span data-i18n="n_rsn">Reason:</span><span class="text-[#ef4444] font-mono">Illegal execve</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400">
+                        <span data-i18n="n_up">Uptime:</span><span class="text-[#ef4444] font-mono" data-i18n="n_term">Terminated</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+
+
+
+        // === 页面加载时第一件事：检查有没有 Token ===
+if (!localStorage.getItem('access_token')) {
+    // 如果没有 Token，直接踢回登录页
+    alert("非法访问！请先登录 ClawGuard Protocol。");
+    window.location.href = 'login.html';
+}
+
+
+
+
+
+
+
+
+        const i18nData = {
+            en: {
+                nav_overview: "OVERVIEW", nav_audit: "LIVE AUDIT", nav_policy: "POLICY ENGINE", nav_nodes: "AGENT NODES", top_status: "SYSTEM STATUS: OPTIMAL",
+                title_overview: "Action Intercept Overview", desc_overview: "Real-time simulation of ClawGuard defense matrix.", btn_deploy: "Deploy Payload", btn_upload: "Upload .py",
+                panel_payload: "Agent Payload", panel_pipeline: "Defense Pipeline", panel_radar: "Posture Radar", panel_log: "Kernel Log",
+                code_c1: "# Requesting external API (Allowed)", code_c2: "# UNEXPECTED: Reading sensitive files", code_c3: "# LETHAL: System wipe command injection",
+                node1_t: "1. Prevention", node1_d: "AST Static Analysis", node2_t: "2. Detection", node2_d: "eBPF Kernel Probe", node3_t: "3. Mitigation", node3_d: "gVisor Isolation",
+                log_init: "ClawGuard engine standing by...", melt_title: "Action Mitigated", melt_desc: "Lethal system call intercepted.<br>Process terminated.",
+                radar_l1: "Static", radar_l2: "Network", radar_l3: "File IO", radar_l4: "Command", radar_l5: "Resource",
+                tab2_title: "Global Audit Log", tab2_desc: "Real-time telemetry of all agent actions across the network.", search_ph: "Search logs...",
+                t_time: "Timestamp", t_agent: "Agent ID", t_sys: "Syscall / Action", t_target: "Target Resource", t_stat: "Status",
+                tab3_title: "Security Policy Engine", tab3_desc: "Configure granular access controls and mitigation strictness.", p_conf: "Defense Matrix Configuration",
+                p_c1_t: "Strict AST Parsing", p_c1_d: "Block execution on any static signature match.", p_c2_t: "eBPF Deep Packet Inspection", p_c2_d: "Monitor all outbound network syscalls dynamically.",
+                p_c3_t: "Auto-Mitigate (Lethal)", p_c3_d: "Automatically SIGKILL containers breaching zero-trust policy.", p_json: "Global Policy JSON",
+                tab4_title: "Active Agent Nodes", tab4_desc: "Manage AI agents running within ClawGuard secure enclaves.", n_total: "Total Nodes:",
+                n_cpu: "CPU Usage:", n_mem: "Memory:", n_test: "TESTING", n_kill: "MITIGATED", n_rsn: "Reason:", n_up: "Uptime:", n_term: "Terminated"
+            },
+            zh: {
+                nav_overview: "全息防御总览", nav_audit: "实时行为审计", nav_policy: "零信任策略引擎", nav_nodes: "AI 节点管理", top_status: "系统状态：全面接管",
+                title_overview: "AI 行为拦截态势推演", desc_overview: "全保真模拟 ClawGuard 三层防御矩阵的底层拦截链路。", btn_deploy: "注入并执行", btn_upload: "上传本地 .py",
+                panel_payload: "受测 Agent 代码片段", panel_pipeline: "防御拦截流水线", panel_radar: "五维安全态势", panel_log: "内核级探针日志",
+                code_c1: "# 发起常规外部 API 请求（放行）", code_c2: "# 异常特征：试图读取系统核心密码本", code_c3: "# 致命特征：注入系统级擦除命令",
+                node1_t: "1. 静态准入", node1_d: "AST 语法树解析", node2_t: "2. 动态监控", node2_d: "eBPF 内核级探针", node3_t: "3. 物理熔断", node3_d: "gVisor 沙箱隔离",
+                log_init: "ClawGuard 防御引擎已就绪...", melt_title: "威胁已熔断", melt_desc: "探针捕获到致命系统调用。<br>沙箱容器已被物理级销毁。",
+                radar_l1: "静态分析", radar_l2: "网络权限", radar_l3: "文件越权", radar_l4: "高危指令", radar_l5: "资源控制",
+                tab2_title: "全局监控日志", tab2_desc: "全网 AI Agent 调用行为实时遥测数据台。", search_ph: "搜索特征码...",
+                t_time: "发生时间", t_agent: "代理节点", t_sys: "系统调用/动作", t_target: "访问目标资源", t_stat: "拦截状态",
+                tab3_title: "系统安全策略引擎", tab3_desc: "配置底层内核拦截细粒度与零信任权限组。", p_conf: "防御矩阵阈值配置",
+                p_c1_t: "强验证 AST 语法解析", p_c1_d: "一旦静态代码匹配到危险签名库则直接拒绝载入沙箱。", p_c2_t: "eBPF 深度包检测", p_c2_d: "在内核态监控容器发出的所有外网连接。",
+                p_c3_t: "自动化物理熔断", p_c3_d: "当检测到违规调用时，跳过人工审核，直接物理抹杀对应沙箱。", p_json: "全局配置 JSON 源码",
+                tab4_title: "活跃 Agent 节点库", tab4_desc: "管理所有在 ClawGuard 沙箱安全区内运行的受控 AI。", n_total: "当前节点数:",
+                n_cpu: "CPU 占用:", n_mem: "内存消耗:", n_test: "沙箱测试中", n_kill: "已物理抹杀", n_rsn: "熔断原因:", n_up: "运行状态:", n_term: "进程已销毁"
+            }
+        };
+
+        let currentLang = 'en';
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            document.getElementById('langToggle').classList.toggle('zh-active');
+            document.getElementById('searchPlaceholder').placeholder = i18nData[currentLang].search_ph;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18nData[currentLang][key]) { el.innerHTML = i18nData[currentLang][key]; }
+            });
+
+            radarChart.data.labels = [ i18nData[currentLang].radar_l1, i18nData[currentLang].radar_l2, i18nData[currentLang].radar_l3, i18nData[currentLang].radar_l4, i18nData[currentLang].radar_l5 ];
+            radarChart.update();
+            renderFakeTable(); 
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('active', 'text-brand-cyan'); el.classList.add('text-gray-500'); });
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.getElementById(`nav-${tabId}`).classList.add('active', 'text-brand-cyan');
+            document.getElementById(`nav-${tabId}`).classList.remove('text-gray-500');
+        }
+
+        const auditTable = document.getElementById('audit-table-body');
+        // === 对接后端：获取真实的审计日志数据 ===
+async function fetchRealAuditLogs() {
+    const auditTable = document.getElementById('audit-table-body');
+    auditTable.innerHTML = '<div class="text-center text-gray-500 py-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在加载核心审计数据...</div>';
+
+    try {
+        const response = await fetch('http://localhost:8000/api/audit/logs', {
+            method: 'POST', // 你的后端接口定义的是 POST 
+            headers: {
+                'Content-Type': 'application/json',
+                // 必须带上通行证！
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            // 请求第1页，取最新的20条数据
+            body: JSON.stringify({
+                page_num: 1,
+                page_size: 20
+            })
+        });
+
+        if (!response.ok) throw new Error("获取日志失败");
+        
+        const resData = await response.json();
+        
+
+
+
+        if (resData.code === 200 && resData.data.list.length > 0) {
+            auditTable.innerHTML = ''; // 清空加载提示
+            
+            // 遍历后端传来的真实数据，生成表格行
+            resData.data.list.forEach(log => {
+                // 格式化时间，只取时分秒以便于显示
+                const timeStr = log.create_time.substring(11, 19); 
+                
+                // 根据后端的 final_status 决定显示的颜色和文字
+                let statText, colorClass;
+                if (log.final_status === 'passed') {
+                    statText = currentLang === 'en' ? 'PASSED' : '安全放行';
+                    colorClass = 'text-green-500';
+                } else if (log.final_status === 'blocked') {
+                    statText = currentLang === 'en' ? 'BLOCKED' : '触发拦截';
+                    colorClass = 'text-[#ef4444]';
+                } else {
+                    statText = currentLang === 'en' ? 'ERROR' : '检测异常';
+                    colorClass = 'text-yellow-500';
+                }
+
+                // 提取拦截原因的前几个字作为高亮显示
+                const reasonExcerpt = log.final_message.substring(0, 20) + '...';
+
+                // 插入 HTML
+                auditTable.innerHTML += `
+                    <div class="grid grid-cols-12 gap-4 px-6 py-3 border-b border-[#111] hover:bg-[#111] transition-colors text-gray-400 items-center">
+                        <div class="col-span-2 text-[#555]">${timeStr}</div>
+                        <div class="col-span-2 text-gray-300 font-bold">${log.agent_id}</div>
+                        <div class="col-span-2 text-[10px]">${log.operator}</div>
+                        <div class="col-span-4 text-gray-500 truncate" title="${log.final_message}">${reasonExcerpt}</div>
+                        <div class="col-span-2 text-right font-bold ${colorClass}">${statText}</div>
+                    </div>
+                `;
+            });
+        } else {
+            auditTable.innerHTML = '<div class="text-center text-gray-600 py-10 font-mono">=== 暂无审计数据 ===</div>';
+        }
+
+    } catch (e) {
+        console.error("加载日志报错:", e);
+        auditTable.innerHTML = `<div class="text-center text-[#ef4444] py-10"><i class="fa-solid fa-triangle-exclamation mr-2"></i> 数据链路断开，无法拉取审计日志</div>`;
+    }
+}
+
+// 页面加载完毕后，自动去抓取一次真实数据
+window.addEventListener('DOMContentLoaded', fetchRealAuditLogs);
+
+
+
+
+        Chart.defaults.color = '#555';
+        Chart.defaults.font.family = "'JetBrains Mono', monospace";
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+        let radarDataArr = [100, 100, 100, 100, 100];
+        
+        const radarChart = new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Static', 'Network', 'File IO', 'Command', 'Resource'],
+                datasets: [{
+                    data: radarDataArr, backgroundColor: 'rgba(0, 240, 255, 0.15)', borderColor: '#00F0FF', pointBackgroundColor: '#00F0FF', borderWidth: 2,
+                }]
+            },
+            options: {
+                layout: { padding: 15 },
+                responsive: true, maintainAspectRatio: false,
+                scales: { 
+                    r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#222' }, angleLines: { color: '#222' }, pointLabels: { font: { size: 10 }, color: '#777' } } 
+                },
+                plugins: { legend: { display: false } },
+                animation: { duration: 800, easing: 'easeOutElastic' } 
+            }
+        });
+
+        // ================= 增加本地文件读取逻辑 =================
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // 将读取到的代码填充进左侧的编辑框
+                document.getElementById('codeEditor').innerText = e.target.result;
+                
+                // 控制台记录日志
+                tLog(`Local payload loaded: ${file.name}`, `成功载入本地分析样本: ${file.name}`, "succ");
+            };
+            reader.readAsText(file);
+            
+            // 清除 input，以便同一个文件可以反复上传
+            event.target.value = '';
+        }
+
+        const term = document.getElementById('terminalBody');
+        let isSimulating = false;
+
+        function tLog(msgEN, msgZH, type='info') {
+            const time = new Date().toISOString().substring(11, 23);
+            let color = 'text-gray-400'; let prefix = '[SYS]';
+            if(type === 'warn') { color = 'text-yellow-500'; prefix = '[WRN]'; }
+            if(type === 'err') { color = 'text-[#ef4444]'; prefix = '[ERR]'; }
+            if(type === 'succ') { color = 'text-green-500'; prefix = '[OK] '; }
+            const msg = currentLang === 'en' ? msgEN : msgZH;
+            term.innerHTML += `<div class="mb-1 ${color}"><span class="text-[#444] mr-2">${time}</span><span class="mr-2 font-bold">${prefix}</span> ${msg}</div>`;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function setNode(num, state) {
+            const icon = document.getElementById(`node-${num}-icon`);
+            const stat = document.getElementById(`node-${num}-status`);
+            if(state === 'active') {
+                icon.className = "w-10 h-10 rounded-full border border-[#00F0FF] bg-[#00F0FF]/10 flex items-center justify-center text-[#00F0FF] mb-2 transition-all duration-300 shadow-[0_0_15px_rgba(0,240,255,0.2)]";
+                stat.innerText = currentLang === 'en' ? "PROCESSING" : "检测中"; stat.className = "text-[10px] mt-2 font-mono text-[#00F0FF] animate-pulse";
+            } else if(state === 'err') {
+                icon.className = "w-10 h-10 rounded-full border border-[#ef4444] bg-[#ef4444]/10 flex items-center justify-center text-[#ef4444] mb-2 transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.3)] animate-pulse";
+                stat.innerText = currentLang === 'en' ? "BLOCKED" : "已拦截"; stat.className = "text-[10px] mt-2 font-mono text-[#ef4444]";
+            } else if(state === 'pass') {
+                icon.className = "w-10 h-10 rounded-full border border-[#333] bg-[#050505] flex items-center justify-center text-gray-500 mb-2 transition-all duration-300";
+                stat.innerText = currentLang === 'en' ? "PASSED" : "已放行"; stat.className = "text-[10px] mt-2 font-mono text-gray-600";
+            } else {
+                icon.className = "w-10 h-10 rounded-full border border-[#333] bg-[#050505] flex items-center justify-center text-gray-600 mb-2 transition-all duration-300";
+                stat.innerText = "IDLE"; stat.className = "text-[10px] mt-2 font-mono text-gray-600";
+            }
+        }
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        // 替换 HTML 中原有的 runSimulation 函数
+async function runSimulation() {
+    if(isSimulating) return;
+    isSimulating = true;
+    
+    // 1. 获取用户在编辑器里写的代码
+    const payloadCode = document.getElementById('codeEditor').value;
+    
+    // UI 状态重置
+    document.getElementById('meltdownScreen').classList.add('hidden');
+    document.getElementById('meltdownScreen').classList.remove('flex');
+    const btn = document.getElementById('startBtn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在深度审计...';
+    
+    [1,2,3].forEach(i => setNode(i, 'idle'));
+    tLog("ClawGuard 审计协议启动...", "Security check sequence started...", "info");
+
+    try {
+        // 第一阶段：静态准入检测 (Node 1)
+        setNode(1, 'active');
+        
+        const response = await fetch('http://localhost:8000/api/security/check', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                // 从本地缓存拿登录时存的 Token
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}` 
+            },
+            body: JSON.stringify({ 
+                code: payloadCode,
+                agent_id: "Main-Terminal-Node"
+            })
+        });
+
+        if (response.status === 401) throw new Error("认证失效，请重新登录");
+        const resData = await response.json();
+        const result = resData.data;
+
+        // --- 开始处理后端返回的真实报告 ---
+
+        // 步骤 1: 静态 AST 审计结果映射
+        if (result.static_audit_result && result.static_audit_result.status === 'passed') {
+            setNode(1, 'pass');
+            tLog("静态准入通过：未发现禁用模块或函数。", "Static analysis passed.", "succ");
+        } else {
+            setNode(1, 'err');
+            tLog("静态审计拦截：" + result.static_audit_result.message, "Static analysis blocked.", "err");
+            triggerMeltdown("静态规则违规");
+            return; // 拦截，不再继续
+        }
+
+        await sleep(600); // 增加一点视觉停留时间
+
+        // 步骤 2: 动态沙箱结果映射 (Node 2)
+        setNode(2, 'active');
+        if (result.sandbox_check_result && result.sandbox_check_result.status === 'passed') {
+            setNode(2, 'pass');
+            tLog("动态沙箱通过：系统调用行为正常。", "Sandbox check passed.", "succ");
+        } else {
+            setNode(2, 'err');
+            tLog("沙箱行为异常：" + (result.sandbox_check_result.error || "触发运行时策略"), "Dynamic violation.", "err");
+            triggerMeltdown("动态行为越权");
+            return;
+        }
+
+        // 步骤 3: 最终裁决 (Node 3)
+        setNode(3, 'pass');
+        tLog("全流程审计通过。代码已授权执行。", "Final authorization granted.", "succ");
+        
+        // 更新雷达图 (高分)
+        updateRadar([100, 95, 100, 100, 95]);
+
+    } catch (e) {
+        tLog("系统错误：" + e.message, "System Error.", "err");
+        setNode(1, 'err');
+    } finally {
+        isSimulating = false;
+        btn.innerHTML = '<i class="fa-solid fa-play mr-2"></i> <span data-i18n="btn_deploy">Deploy Payload</span>';
+        // 关键：检测完后，立刻刷新底部的审计日志列表
+        if (typeof fetchRealAuditLogs === 'function') fetchRealAuditLogs();
+    }
+}
+
+// 辅助函数：触发物理熔断界面
+function triggerMeltdown(reason) {
+    setNode(3, 'err');
+    document.getElementById('meltdownScreen').classList.remove('hidden');
+    document.getElementById('meltdownScreen').classList.add('flex');
+    document.getElementById('radar-score').innerText = 'DANGER';
+    document.getElementById('radar-score').className = 'text-[#ef4444] font-bold';
+    updateRadar([20, 30, 10, 5, 20]);
+}
+
+// 辅助函数：更新雷达图数据
+function updateRadar(dataArr) {
+    if (window.radarChart) {
+        window.radarChart.data.datasets[0].data = dataArr;
+        window.radarChart.update();
+    }
+}
+    </script>
+</body>
+</html>

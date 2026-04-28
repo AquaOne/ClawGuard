@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawGuard - 身份验证</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { colors: { brand: { cyan: '#00F0FF' } }, fontFamily: { mono: ['JetBrains Mono', 'monospace'] } }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #000; color: #fff; overflow: hidden; }
+        .cyber-input { background: #0a0a0a; border: 1px solid #333; transition: all 0.3s; }
+        .cyber-input:focus { border-color: #00F0FF; box-shadow: 0 0 10px rgba(0,240,255,0.2); }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen font-mono relative">
+
+    <div class="absolute w-[600px] h-[600px] bg-brand-cyan/10 rounded-full blur-[150px] -z-10"></div>
+
+    <div class="w-80 flex flex-col items-center animate-[fadeIn_1s_ease-out]">
+        <div class="w-24 h-24 mb-8 relative">
+            <svg viewBox="0 0 100 100" fill="none" class="w-full h-full drop-shadow-[0_0_15px_rgba(0,240,255,0.5)]">
+                <path d="M50 5L89 27.5V72.5L50 95L11 72.5V27.5L50 5Z" stroke="#00F0FF" stroke-width="2" stroke-dasharray="300" stroke-dashoffset="300" class="animate-[draw_2s_forwards]"/>
+                <path d="M35 65L65 35" stroke="white" stroke-width="8" stroke-linecap="round" class="animate-pulse" />
+            </svg>
+        </div>
+
+        <div class="text-center mb-8">
+            <h1 class="text-xl font-bold tracking-widest uppercase">ClawGuard</h1>
+            <p class="text-brand-cyan text-[10px] tracking-[0.2em] mt-1">SECURE PROTOCOL LOGIN</p>
+        </div>
+
+        <div class="w-full space-y-4">
+            <div class="relative">
+                <i class="fa-solid fa-terminal absolute left-3 top-3 text-gray-500 text-xs"></i>
+                <input type="text" id="username" placeholder="ADMIN ID" class="cyber-input w-full rounded py-2 pl-9 pr-4 text-xs outline-none">
+            </div>
+            <div class="relative">
+                <i class="fa-solid fa-lock absolute left-3 top-3 text-gray-500 text-xs"></i>
+                <input type="password" id="password" placeholder="ACCESS KEY" class="cyber-input w-full rounded py-2 pl-9 pr-4 text-xs outline-none">
+            </div>
+            
+            <button id="loginBtn" onclick="attemptLogin()" class="w-full bg-white text-black hover:bg-brand-cyan transition-colors font-bold py-2.5 rounded text-xs tracking-widest uppercase mt-2">
+                Init Sequence
+            </button>
+        </div>
+
+        <div id="statusMsg" class="mt-4 text-[10px] h-4 tracking-wider text-gray-500">AWAITING CREDENTIALS...</div>
+    </div>
+
+    <script>
+        // 动画控制
+        document.head.insertAdjacentHTML("beforeend", `<style>
+            @keyframes draw { to { stroke-dashoffset: 0; } }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        </style>`);
+
+        // 登录核心逻辑
+        async function attemptLogin() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            const msg = document.getElementById('statusMsg');
+
+            if (!user || !pass) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> VERIFYING';
+            msg.className = "mt-4 text-[10px] h-4 tracking-wider text-brand-cyan animate-pulse";
+            msg.innerText = "CHECKING DATABASE...";
+
+            try {
+                // 1. 构造发给 FastAPI 的数据 (OAuth2 格式需要 FormData)
+                const formData = new FormData();
+                formData.append('username', user);
+                formData.append('password', pass);
+
+                // 2. 发送请求给你的 main.py
+                            // 修改后的逻辑：更健壮地判断登录状态
+                const response = await fetch('http://localhost:8000/api/auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // 1. 首先检查 HTTP 状态码是否为 OK (200-299)
+                if (response.ok) {
+                    msg.className = "mt-4 text-[10px] h-4 tracking-wider text-green-500";
+                    msg.innerText = "ACCESS GRANTED. REDIRECTING...";
+                    
+                    // 2. 兼容两种常见的返回格式：
+                    // 格式 A: {"code": 200, "data": {"access_token": "..."}}
+                    // 格式 B: {"access_token": "..."}
+                    const token = data.data ? data.data.access_token : data.access_token;
+                    
+                    if (token) {
+                        localStorage.setItem('access_token', token);
+                        setTimeout(() => {
+                            window.location.href = 'ClawGuard_Premium.html';
+                        }, 1000);
+                    } else {
+                        msg.innerText = "ERROR: TOKEN NOT FOUND";
+                        btn.disabled = false;
+                    }
+                } else {
+                    // 3. 如果后端真的返回了错误（如 401），则显示后端给的错误信息
+                    const errorMsg = data.detail || "INVALID CREDENTIALS";
+                    throw new Error(errorMsg);
+                }
+            } catch (error) {
+                msg.className = "mt-4 text-[10px] h-4 tracking-wider text-[#ef4444]";
+                msg.innerText = "ACCESS DENIED: " + error.message;
+                btn.disabled = false;
+                btn.innerHTML = 'RETRY CONNECTION';
+            }
+        }
+    </script>
+</body>
+</html>
